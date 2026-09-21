@@ -166,7 +166,7 @@ export default function App() {
               <QrCode size={20} />
             </div>
             <div>
-              <h1 className="text-sm font-bold tracking-tight sm:text-base">Asian QR / Barcode Testing Workbench</h1>
+              <h1 className="text-sm font-bold tracking-tight sm:text-base"> QR Muse / Barcode Testing Workbench</h1>
               <p className="hidden text-xs text-slate-500 dark:text-slate-400 sm:block">
                 Bulk QR generation & scanner testing
               </p>
