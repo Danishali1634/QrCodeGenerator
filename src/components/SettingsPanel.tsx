@@ -1,4 +1,4 @@
-import type { Settings, QRSize, ErrorCorrection } from '@/types';
+import type { Settings, QRSize, ErrorCorrection, CodeFormat } from '@/types';
 
 type Props = {
   settings: Settings;
@@ -78,6 +78,18 @@ export function SettingsPanel({ settings, update }: Props) {
         checked={settings.wrapAround}
         onChange={(v) => update({ wrapAround: v })}
       />
+      <Segmented<CodeFormat>
+        label="Code type"
+        value={settings.format}
+        onChange={(v) => update({ format: v })}
+        options={[
+          { value: 'qr', label: 'QR code' },
+          { value: 'code128', label: 'Barcode (Code 128)' },
+        ]}
+      />
+      <p className="px-2 pb-1 text-[11px] leading-snug text-slate-400 dark:text-slate-500">
+        Use Barcode if your scanner is a 1D/laser scanner that can't read QR codes.
+      </p>
       <Segmented<QRSize>
         label="QR Size"
         value={settings.qrSize}

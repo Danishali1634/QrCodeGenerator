@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   QrCode, Play, Trash2, ChevronLeft, ChevronRight, Download, Copy,
   Search, Maximize2, Sun, Moon, Monitor, X,
-  AlertCircle, ShieldCheck, RotateCw, ListChecks,
+  AlertCircle, RotateCw, ListChecks, Sparkles, Layers,
 } from 'lucide-react';
 import type { ThemeMode } from '@/types';
 import { QR_SIZE_PX } from '@/types';
@@ -20,6 +20,11 @@ import { SettingsPanel } from '@/components/SettingsPanel';
 import { ImportButtons } from '@/components/ImportButtons';
 import { BulkExport } from '@/components/BulkExport';
 import { FullscreenMode } from '@/components/FullscreenMode';
+import { SoundAutoNext } from '@/components/SoundAutoNext';
+import { Studio } from '@/components/studio/Studio';
+import { BrandMark, CreatorAvatar } from '@/components/Brand';
+
+type AppMode = 'studio' | 'bulk';
 
 export default function App() {
   const { theme, changeTheme } = useTheme('system');
@@ -33,6 +38,21 @@ export default function App() {
   const [confirmClear, setConfirmClear] = useState(false);
   const [downloadError, setDownloadError] = useState('');
   const [resumeDismissed, setResumeDismissed] = useState(false);
+  const [mode, setMode] = useState<AppMode>(() => {
+    try {
+      return localStorage.getItem('qr-muse-mode') === 'bulk' ? 'bulk' : 'studio';
+    } catch {
+      return 'studio';
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('qr-muse-mode', mode);
+    } catch {
+      // ignore
+    }
+  }, [mode]);
 
   const hasItems = store.items.length > 0;
   const detectedCount = countDetected(inputText);
@@ -67,7 +87,7 @@ export default function App() {
   }, [store.items, store.currentIndex, store.settings, theme, inputText, hasItems, persist]);
 
   const handleKey = useCallback((e: KeyboardEvent) => {
-    if (!hasItems) return;
+    if (!hasItems || mode !== 'bulk') return;
     switch (e.key) {
       case 'ArrowRight':
       case 'ArrowDown':
@@ -101,7 +121,7 @@ export default function App() {
         setConfirmClear(false);
         break;
     }
-  }, [fullscreen, hasItems, store]);
+  }, [fullscreen, hasItems, mode, store]);
 
   useKeyboardShortcuts(handleKey);
 
@@ -143,6 +163,7 @@ export default function App() {
         QR_SIZE_PX[store.settings.qrSize],
         store.settings.errorCorrection,
         store.settings.margin,
+        store.settings.format,
       );
       downloadBlob(blob, `${sanitizeFilename(store.current.value)}.png`);
     } catch (err) {
@@ -162,18 +183,42 @@ export default function App() {
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white">
-              <QrCode size={20} />
-            </div>
+            <BrandMark className="h-10 w-10 shrink-0 drop-shadow-[0_6px_14px_rgba(192,38,211,0.35)] transition-transform hover:rotate-6 hover:scale-105" />
             <div>
-              <h1 className="text-sm font-bold tracking-tight sm:text-base"> QR Muse / Barcode Testing Workbench</h1>
-              <p className="hidden text-xs text-slate-500 dark:text-slate-400 sm:block">
-                Bulk QR generation & scanner testing
+              <h1 className="text-base font-black tracking-tight sm:text-lg">
+                QR <span className="bg-gradient-to-r from-indigo-600 via-fuchsia-600 to-rose-500 bg-clip-text text-transparent">Muse</span>
+              </h1>
+              <p className="text-[11px] leading-tight text-slate-500 dark:text-slate-400 sm:text-xs">
+                Design · Generate · Scan
               </p>
             </div>
           </div>
+          <nav className="hidden rounded-xl bg-slate-100 p-1 dark:bg-slate-800 md:flex">
+            {([
+              { id: 'studio', label: 'QR Studio', icon: <Sparkles size={15} /> },
+              { id: 'bulk', label: 'Bulk Workbench', icon: <Layers size={15} /> },
+            ] as const).map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setMode(t.id)}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-semibold transition-all ${
+                  mode === t.id
+                    ? 'bg-white text-indigo-600 shadow-sm dark:bg-slate-700 dark:text-indigo-300'
+                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100'
+                }`}
+              >
+                {t.icon} {t.label}
+              </button>
+            ))}
+          </nav>
           <div className="flex items-center gap-2">
-            {hasItems && (
+            <button
+              onClick={() => setMode(mode === 'studio' ? 'bulk' : 'studio')}
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800 md:hidden"
+            >
+              {mode === 'studio' ? <><Layers size={15} /> Bulk</> : <><Sparkles size={15} /> Studio</>}
+            </button>
+            {mode === 'bulk' && hasItems && (
               <button
                 onClick={() => setFullscreen(true)}
                 className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"
@@ -181,12 +226,14 @@ export default function App() {
                 <Maximize2 size={15} /> <span className="hidden sm:inline">Fullscreen</span>
               </button>
             )}
+            {mode === 'bulk' && (
             <button
               onClick={() => setShowSettings((s) => !s)}
               className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"
             >
               <ListChecks size={15} /> <span className="hidden sm:inline">Settings</span>
             </button>
+            )}
             <button
               onClick={cycleTheme}
               className="inline-flex items-center justify-center rounded-md border border-slate-300 px-2.5 py-1.5 hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"
@@ -198,7 +245,13 @@ export default function App() {
         </div>
       </header>
 
-      {restorable && !resumeDismissed && (
+      {mode === 'studio' && (
+        <main className="mx-auto max-w-[1400px] px-4 py-6">
+          <Studio />
+        </main>
+      )}
+
+      {mode === 'bulk' && restorable && !resumeDismissed && (
         <div className="mx-auto max-w-[1400px] px-4 pt-4">
           <div className="flex items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm dark:border-blue-900 dark:bg-blue-950/50">
             <div className="flex items-center gap-2">
@@ -225,6 +278,7 @@ export default function App() {
         </div>
       )}
 
+      {mode === 'bulk' && (
       <main className="mx-auto max-w-[1400px] px-4 py-4">
         <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
           <label className="mb-2 block text-sm font-semibold">Paste Codes</label>
@@ -369,6 +423,7 @@ export default function App() {
                     errorCorrection={store.settings.errorCorrection}
                     margin={store.settings.margin}
                     regenToken={store.regenToken}
+                    format={store.settings.format}
                   />
                 )}
               </div>
@@ -435,6 +490,10 @@ export default function App() {
         )}
 
         {hasItems && (
+          <SoundAutoNext onNext={store.next} position={`${store.currentIndex + 1} / ${store.items.length}`} />
+        )}
+
+        {hasItems && (
           <section className="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
             <div className="flex flex-wrap items-center gap-4 text-sm">
               <span className="font-medium">Total: {store.items.length}</span>
@@ -445,17 +504,29 @@ export default function App() {
               errorCorrection={store.settings.errorCorrection}
               margin={store.settings.margin}
               size={QR_SIZE_PX[store.settings.qrSize]}
+              format={store.settings.format}
             />
           </section>
         )}
 
-        <footer className="mt-4 flex items-center justify-center gap-2 pb-8 text-xs text-slate-400 dark:text-slate-600">
-          <ShieldCheck size={14} />
-          <span>Your codes stay in your browser. No barcode data is uploaded to a server.</span>
-        </footer>
       </main>
+      )}
 
-      {showSettings && (
+      <footer className="mx-auto flex max-w-[1400px] flex-col items-center gap-3 px-4 pb-10 pt-6 text-center">
+        <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white py-1.5 pl-1.5 pr-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <CreatorAvatar size={40} />
+          <div className="text-left leading-tight">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Created by</p>
+            <strong className="bg-gradient-to-r from-indigo-600 via-fuchsia-600 to-rose-500 bg-clip-text text-base font-black text-transparent">
+              Danish Akhtar
+            </strong>
+          </div>
+          <BrandMark className="ml-1 h-7 w-7" />
+        </div>
+       
+      </footer>
+
+      {mode === 'bulk' && showSettings && (
         <div className="fixed right-4 top-16 z-40 w-72 rounded-xl border border-slate-200 bg-white p-3 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-sm font-semibold">Settings</h3>
@@ -467,7 +538,7 @@ export default function App() {
         </div>
       )}
 
-      {fullscreen && store.current && (
+      {mode === 'bulk' && fullscreen && store.current && (
         <FullscreenMode
           item={store.current}
           index={store.currentIndex}
@@ -476,6 +547,7 @@ export default function App() {
           errorCorrection={store.settings.errorCorrection}
           margin={store.settings.margin}
           regenToken={store.regenToken}
+          format={store.settings.format}
           onPrev={store.prev}
           onNext={store.next}
           onClose={() => setFullscreen(false)}

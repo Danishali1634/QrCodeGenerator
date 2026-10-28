@@ -6,6 +6,7 @@ export type QRItem = {
 export type QRSize = 'small' | 'medium' | 'large' | 'xl';
 export type ErrorCorrection = 'L' | 'M' | 'Q' | 'H';
 export type ThemeMode = 'light' | 'dark' | 'system';
+export type CodeFormat = 'qr' | 'code128';
 
 export type Settings = {
   removeDuplicates: boolean;
@@ -13,6 +14,7 @@ export type Settings = {
   errorCorrection: ErrorCorrection;
   margin: number;
   wrapAround: boolean;
+  format: CodeFormat;
 };
 
 export type PersistedState = {
@@ -29,6 +31,7 @@ export const DEFAULT_SETTINGS: Settings = {
   errorCorrection: 'M',
   margin: 4,
   wrapAround: false,
+  format: 'qr',
 };
 
 export const QR_SIZE_PX: Record<QRSize, number> = {

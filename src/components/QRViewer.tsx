@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { QRSize, ErrorCorrection } from '@/types';
+import type { QRSize, ErrorCorrection, CodeFormat } from '@/types';
 import { QR_SIZE_PX } from '@/types';
 import { generateQRDataURL } from '@/lib/qr';
 
@@ -9,9 +9,10 @@ type Props = {
   errorCorrection: ErrorCorrection;
   margin: number;
   regenToken: number;
+  format: CodeFormat;
 };
 
-export function QRViewer({ value, size, errorCorrection, margin, regenToken }: Props) {
+export function QRViewer({ value, size, errorCorrection, margin, regenToken, format }: Props) {
   const [dataUrl, setDataUrl] = useState<string>('');
   const [error, setError] = useState<string>('');
 
@@ -22,7 +23,7 @@ export function QRViewer({ value, size, errorCorrection, margin, regenToken }: P
       return;
     }
     setError('');
-    generateQRDataURL(value, QR_SIZE_PX[size], errorCorrection, margin)
+    generateQRDataURL(value, QR_SIZE_PX[size], errorCorrection, margin, format)
       .then((url) => {
         if (!cancelled) setDataUrl(url);
       })
@@ -35,7 +36,7 @@ export function QRViewer({ value, size, errorCorrection, margin, regenToken }: P
     return () => {
       cancelled = true;
     };
-  }, [value, size, errorCorrection, margin, regenToken]);
+  }, [value, size, errorCorrection, margin, regenToken, format]);
 
   if (error) {
     return (

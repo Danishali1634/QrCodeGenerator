@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { QRItem, QRSize, ErrorCorrection } from '@/types';
+import type { QRItem, QRSize, ErrorCorrection, CodeFormat } from '@/types';
 import { QR_SIZE_PX } from '@/types';
 import { generateQRDataURL } from '@/lib/qr';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -12,6 +12,7 @@ type Props = {
   errorCorrection: ErrorCorrection;
   margin: number;
   regenToken: number;
+  format: CodeFormat;
   onPrev: () => void;
   onNext: () => void;
   onClose: () => void;
@@ -25,6 +26,7 @@ export function FullscreenMode({
   errorCorrection,
   margin,
   regenToken,
+  format,
   onPrev,
   onNext,
   onClose,
@@ -46,11 +48,13 @@ export function FullscreenMode({
   const [dataUrl, setDataUrl] = useState('');
   useEffect(() => {
     let cancelled = false;
-    generateQRDataURL(item.value, fsSize, errorCorrection, margin).then((url) => {
-      if (!cancelled) setDataUrl(url);
-    });
+    generateQRDataURL(item.value, fsSize, errorCorrection, margin, format)
+      .then((url) => {
+        if (!cancelled) setDataUrl(url);
+      })
+      .catch(() => undefined);
     return () => { cancelled = true; };
-  }, [item.value, fsSize, errorCorrection, margin, regenToken]);
+  }, [item.value, fsSize, errorCorrection, margin, regenToken, format]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white dark:bg-slate-950">
